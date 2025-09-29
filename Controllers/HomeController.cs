@@ -2,30 +2,28 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using UrlShorteningService.Models;
 
-namespace UrlShorteningService.Controllers;
 
-public class HomeController : Controller
+[ApiController]
+[Route("[controller]")]
+public class RedirectController : ControllerBase
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly RedirectDbContext _db;
 
-    public HomeController(ILogger<HomeController> logger)
+    public RedirectController(RedirectDbContext db)
     {
-        _logger = logger;
+        _db = db;
     }
 
-    public IActionResult Index()
+    [HttpGet("{shortUri}")]
+    public async Task<IActionResult> RedirectToLongUrl(string shortUri)
     {
-        return View();
-    }
+        var entry = await _db.RedirectEntries
+                             .FirstOrDefaultAsync(r => r.ShortUri == shortUri);
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+        if (entry == null)
+            return NotFound();
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return RedirectPermanent(entry.LongUrl); // 301 redirect
     }
 }
+
