@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using UrlShorteningService.Models;
-
+using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("[controller]")]
@@ -13,7 +13,6 @@ public class RedirectController : ControllerBase
     {
         _db = db;
     }
-
     [HttpGet("{shortUri}")]
     public async Task<IActionResult> RedirectToLongUrl(string shortUri)
     {
@@ -24,6 +23,20 @@ public class RedirectController : ControllerBase
             return NotFound();
 
         return RedirectPermanent(entry.LongUrl); // 301 redirect
+    }
+    [HttpPost]
+    public async Task<IActionResult> CreateRedirect(string shortUri, string longUrl)
+    {
+        var entry = new RedirectEntry
+        {
+            ShortUri = shortUri,
+            LongUrl = longUrl
+        };
+
+        _db.RedirectEntries.Add(entry);
+        await _db.SaveChangesAsync();
+
+        return Ok(entry);
     }
 }
 
